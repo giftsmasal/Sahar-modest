@@ -3,9 +3,8 @@ import { useEffect, useState, useContext } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { CartContext } from "../context/CartContext";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 import Swal from "sweetalert2";
-import "../components/product.css";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -22,14 +21,11 @@ export default function ProductDetails() {
         if (snap.exists()) {
           const data = { id: snap.id, ...snap.data() };
           setProduct(data);
-
           if (data.colors?.[0]?.sizes) {
             const firstAvailableSize = Object.keys(data.colors[0].sizes).find(
               (size) => data.colors[0].sizes[size] > 0
             );
-            if (firstAvailableSize) {
-              setSelectedSize(firstAvailableSize);
-            }
+            if (firstAvailableSize) setSelectedSize(firstAvailableSize);
           }
         }
       } catch (error) {
@@ -47,8 +43,6 @@ export default function ProductDetails() {
 
   const handleAdd = () => {
     if (!selectedSize) return Swal.fire("Tailles", "Veuillez choisir une taille", "info");
-    if (currentStock === 0) return Swal.fire("Stock", "Désolé, cette taille est épuisée", "error");
-
     addToCart({
       productId: product.id,
       name: product.name,
@@ -58,86 +52,60 @@ export default function ProductDetails() {
       quantity,
       stockMax: currentStock,
     });
-    Swal.fire({ title: "Ajouté!", icon: "success", timer: 1500, showConfirmButton: false });
-  };
-
-  const nextVariant = () => {
-    const next = selectedVariant === images.length - 1 ? 0 : selectedVariant + 1;
-    setSelectedVariant(next);
-    setQuantity(1);
-  };
-
-  const prevVariant = () => {
-    const prev = selectedVariant === 0 ? images.length - 1 : selectedVariant - 1;
-    setSelectedVariant(prev);
-    setQuantity(1);
+    Swal.fire({ 
+      title: "Ajouté au panier!", 
+      icon: "success", 
+      timer: 1500, 
+      showConfirmButton: false,
+      customClass: { popup: 'rounded-xl' }
+    });
   };
 
   return (
-    <div className="p-details-page">
-      <div className="p-gallery">
-        <div className="p-main-img-container">
-          <button className="nav-arrow left" onClick={prevVariant} aria-label="Précédent">
+    <div className="p-details-container">
+      {/* 1. Gallery Section */}
+      <div className="p-gallery-section">
+        <div className="p-main-wrapper">
+          <button className="nav-arrow left" onClick={() => setSelectedVariant(prev => prev === 0 ? images.length - 1 : prev - 1)}>
             <ChevronLeft size={20} />
           </button>
-
-          <img 
-            src={variant.image} 
-            alt={product.name} 
-            className="p-main-img" 
-          />
-
-          <button className="nav-arrow right" onClick={nextVariant} aria-label="Suivant">
+          <img src={variant.image} alt={product.name} className="p-main-img" />
+          <button className="nav-arrow right" onClick={() => setSelectedVariant(prev => prev === images.length - 1 ? 0 : prev + 1)}>
             <ChevronRight size={20} />
           </button>
         </div>
-
-        <div className="p-thumbs-scroll">
+        <div className="p-thumbnails">
           {images.map((img, i) => (
-            <img
-              key={i}
-              src={img}
-              alt={`${product.name} variant ${i}`}
-              className={i === selectedVariant ? "active-thumb" : ""}
-              onClick={() => {
-                setSelectedVariant(i);
-                setQuantity(1);
-              }}
+            <img 
+              key={i} src={img} 
+              className={i === selectedVariant ? "thumb active" : "thumb"} 
+              onClick={() => setSelectedVariant(i)} 
             />
           ))}
         </div>
       </div>
 
-      <div className="p-info-side">
-        <div className="p-header">
-          <span className="p-cat">{product.collection || "Collection Modest"}</span>
-          <h1 className="p-title">{product.name}</h1>
-          <div className="p-price-row">
-            <span className="new-price-big">{product.price} DH</span>
-            {product.oldPrice && <span className="old-price-big">{product.oldPrice} DH</span>}
-          </div>
-
-          <div className="stock-status-badge">
-            {selectedSize && currentStock > 0 ? (
-              <span className="stock-in">● En Stock</span>
-            ) : selectedSize && currentStock === 0 ? (
-              <span className="stock-out">● Rupture de stock</span>
-            ) : null}
-          </div>
+      {/* 2. Info Section */}
+      <div className="p-info-section">
+        <span className="p-category">{product.collection || "SAHABA PARFUM 306"}</span>
+        <h1 className="p-title">{product.name}</h1>
+        
+        <div className="p-price-box">
+          <span className="price-new">{product.price} DH</span>
+          {product.oldPrice && <span className="price-old">{product.oldPrice} DH</span>}
+          {/* رجعت اللون الأخضر هنا */}
+          <span className="stock-tag">{currentStock > 0 ? "● En Stock" : "○ Épuisé"}</span>
         </div>
 
-        <div className="p-section">
-          <label>Choisir la Taille</label>
-          <div className="p-size-grid">
+        <div className="p-options">
+          <label className="section-label">Choisir la Taille</label>
+          <div className="size-selector">
             {Object.keys(variant.sizes).map((size) => (
               <button
                 key={size}
                 disabled={variant.sizes[size] === 0}
-                className={selectedSize === size ? "size-item active" : "size-item"}
-                onClick={() => {
-                  setSelectedSize(size);
-                  setQuantity(1);
-                }}
+                className={selectedSize === size ? "size-btn active" : "size-btn"}
+                onClick={() => setSelectedSize(size)}
               >
                 {size}
               </button>
@@ -145,86 +113,110 @@ export default function ProductDetails() {
           </div>
         </div>
 
-        <div className="p-section">
-          <label>Quantité</label>
-          <div className="p-qty-selector">
-            <button 
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))} 
-              disabled={currentStock === 0 || quantity <= 1}
-            >
-              -
-            </button>
+        <div className="p-actions">
+          <div className="qty-input">
+            <button onClick={() => setQuantity(q => Math.max(1, q - 1))}>-</button>
             <span>{quantity}</span>
-            <button 
-              onClick={() => setQuantity((q) => Math.min(q + 1, currentStock))} 
-              disabled={currentStock === 0 || quantity >= currentStock}
-            >
-              +
-            </button>
+            <button onClick={() => setQuantity(q => Math.min(currentStock, q + 1))}>+</button>
           </div>
+          {/* الزر باللون البيج/المارون وبنص "Ajouter au panier" */}
+          <button className="buy-btn" onClick={handleAdd} disabled={currentStock === 0}>
+            <ShoppingBag size={18} />
+            <span>{currentStock === 0 ? "Rupture de Stock" : "Ajouter au Panier"}</span>
+          </button>
         </div>
 
-        <button 
-          className="p-add-to-cart-btn" 
-          onClick={handleAdd} 
-          disabled={!selectedSize || currentStock === 0}
-        >
-          {currentStock === 0 ? "Rupture de Stock" : "Commander Maintenant"}
-        </button>
-
-        <div className="p-desc">
-          <h4>Description</h4>
+        <div className="p-description">
+          <h3 className="section-label">Description</h3>
           <p>{product.description}</p>
         </div>
       </div>
 
-      <style>{`
-        .p-main-img-container {
-          position: relative;
-          width: 100%;
+      <style jsx>{`
+        .p-details-container {
           display: flex;
-          align-items: center;
-          border-radius: 15px;
+          flex-wrap: wrap;
+          gap: 40px;
+          padding: 20px;
+          max-width: 1100px;
+          margin: 0 auto;
+          font-family: sans-serif;
+        }
+
+        .p-gallery-section, .p-info-section {
+          flex: 1 1 450px;
+          width: 100%;
+        }
+
+        .p-main-wrapper {
+          position: relative;
+          border-radius: 20px;
           overflow: hidden;
           background: #f9f9f9;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        .p-main-img {
-          width: 100%;
-          height: auto;
-          object-fit: cover;
-          display: block;
-        }
-        .nav-arrow {
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          background: rgba(255, 255, 255, 0.7);
-          border: none;
-          width: 35px;
-          height: 35px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          color: #8b6f5a;
-          transition: 0.3s;
-          z-index: 10;
-        }
-        .nav-arrow:hover { background: #8b6f5a; color: white; }
-        .nav-arrow.left { left: 10px; }
-        .nav-arrow.right { right: 10px; }
 
-        .stock-status-badge { margin: 15px 0; font-size: 14px; font-weight: 600; }
-        .stock-in { color: #15803d; background: #dcfce7; padding: 5px 15px; border-radius: 50px; }
-        .stock-out { color: #b91c1c; background: #fee2e2; padding: 5px 15px; border-radius: 50px; }
+        .p-main-img { width: 100%; height: auto; object-fit: cover; display: block; }
+
+        .nav-arrow {
+          position: absolute; top: 50%; transform: translateY(-50%);
+          background: rgba(255,255,255,0.9); border: none; padding: 10px;
+          border-radius: 50%; cursor: pointer; display: flex; transition: 0.3s;
+        }
+        .nav-arrow:hover { background: #fff; transform: translateY(-50%) scale(1.1); }
+        .nav-arrow.left { left: 15px; }
+        .nav-arrow.right { right: 15px; }
+
+        .p-thumbnails { display: flex; gap: 12px; margin-top: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .thumb { width: 65px; height: 75px; object-fit: cover; cursor: pointer; border-radius: 10px; border: 2px solid transparent; transition: 0.3s; }
+        .thumb.active { border-color: #c5a992; } /* مارون فاتح */
+
+        .p-category { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #999; font-weight: bold; }
+        .p-title { font-size: 32px; font-weight: 800; margin: 8px 0; color: #1a1a1a; }
+        .p-price-box { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .price-new { font-size: 26px; font-weight: 900; color: #1a1a1a; }
+        .price-old { text-decoration: line-through; color: #bbb; font-size: 18px; }
         
-        .size-item:disabled { opacity: 0.3; cursor: not-allowed; background: #f5f5f5; color: #aaa; }
+        /* رجعت اللون الأخضر هنا */
+        .stock-tag { color: #2ecc71; font-size: 13px; font-weight: bold; background: #ecfdf5; padding: 4px 10px; border-radius: 20px; }
+
+        .section-label { font-size: 13px; font-weight: bold; text-transform: uppercase; color: #444; margin-bottom: 12px; display: block; }
         
-        @media (max-width: 480px) {
-          .nav-arrow { width: 32px; height: 32px; }
-          .nav-arrow.left { left: 5px; }
-          .nav-arrow.right { right: 5px; }
+        .size-selector { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
+        .size-btn { padding: 12px 20px; border: 1px solid #eee; background: #fff; cursor: pointer; border-radius: 8px; font-weight: 600; transition: 0.2s; }
+        .size-btn.active { background: #c5a992; color: #fff; border-color: #c5a992; }
+        .size-btn:hover:not(:disabled) { border-color: #c5a992; color: #c5a992; }
+        .size-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .p-actions { display: flex; gap: 15px; margin: 30px 0; align-items: center; }
+        .qty-input { display: flex; align-items: center; border: 1px solid #eee; border-radius: 10px; background: #f9f9f9; }
+        .qty-input button { padding: 12px 18px; border: none; background: none; cursor: pointer; font-size: 20px; color: #666; }
+        .qty-input span { width: 30px; text-align: center; font-weight: bold; font-size: 16px; }
+
+        .buy-btn {
+          flex: 2;
+          background: #c5a992; /* اللون المارون/البيج اللي كان عندك */
+          color: #fff; 
+          padding: 16px 24px;
+          border: none; border-radius: 12px; font-weight: 700;
+          text-transform: uppercase; cursor: pointer;
+          display: flex; align-items: center; justify-content: center; gap: 10px;
+          transition: 0.3s;
+          box-shadow: 0 4px 15px rgba(197, 169, 146, 0.3);
+          font-size: 14px;
+          white-space: nowrap; /* كيمنع النص يتقسم على جوج سطور */
+        }
+        .buy-btn:hover:not(:disabled) { background: #b3967f; transform: translateY(-2px); }
+        .buy-btn:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+
+        .p-description p { line-height: 1.6; color: #666; font-size: 15px; }
+
+        @media (max-width: 600px) {
+          .p-details-container { padding: 15px; gap: 25px; }
+          .p-title { font-size: 26px; }
+          .p-actions { flex-direction: column; align-items: stretch; }
+          .buy-btn { width: 100%; order: 1; }
+          .qty-input { order: 2; justify-content: center; }
         }
       `}</style>
     </div>
