@@ -2,10 +2,9 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
 import Collection from "./pages/Collection";
 import ProductDetails from "./pages/ProductDetails";
+import ThankYou from "./pages/ThankYou";
 
 import Dashboard from "./admin/Dashboard";
 import Products from "./admin/Products";
@@ -26,7 +25,7 @@ import { AuthProvider } from "./context/AuthContext";
 import AdminSettings from "./components/AdminSettings";
 import Reclamation from "./components/Reclamations";
 import AdminReclamations from "./pages/ReclamationsAdmin";
-
+import Avis from "./pages/Avis";
 function App() {
   return (
     <AuthProvider>
@@ -40,10 +39,10 @@ function App() {
 
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
             <Route path="/collection/:name" element={<Collection />} />
             <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/thank-you" element={<ThankYou />} />
+            <Route path="/avis" element={<Avis />} />
 
             <Route path="/admin-login" element={<AdminLogin />} />
 
