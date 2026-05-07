@@ -2,7 +2,42 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
-import { CheckCircle2, Home, ShoppingBag, MessageCircle, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  Home,
+  ShoppingBag,
+  MessageCircle,
+  Sparkles,
+} from "lucide-react";
+
+function formatWhatsappNumber(number) {
+  let clean = String(number || "").replace(/\D/g, "");
+
+  if (!clean) return "";
+
+  if (clean.startsWith("00")) {
+    clean = clean.substring(2);
+  }
+
+  if (clean.startsWith("0")) {
+    clean = "212" + clean.substring(1);
+  }
+
+  if (!clean.startsWith("212")) {
+    clean = "212" + clean;
+  }
+
+  return clean;
+}
+
+function getWhatsappLink(number, text) {
+  const cleanNumber = formatWhatsappNumber(number);
+  if (!cleanNumber) return "";
+
+  return `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(
+    text
+  )}`;
+}
 
 export default function ThankYou() {
   const [whatsapp, setWhatsapp] = useState("");
@@ -18,12 +53,8 @@ export default function ThankYou() {
     fetchWhatsapp();
   }, []);
 
-  const cleanWhatsapp = whatsapp.replace(/\D/g, "");
-  const whatsappText =
-    "Bonjour, j'ai une question concernant ma commande.";
-  const whatsappLink = `https://wa.me/${cleanWhatsapp}?text=${encodeURIComponent(
-    whatsappText
-  )}`;
+  const whatsappText = "Bonjour, j'ai une question concernant ma commande.";
+  const whatsappLink = getWhatsappLink(whatsapp, whatsappText);
 
   return (
     <div className="thankyou-page">
@@ -58,12 +89,12 @@ export default function ThankYou() {
           </p>
         </div>
 
-        {cleanWhatsapp && (
+        {whatsappLink && (
           <a
             className="whatsapp-btn"
             href={whatsappLink}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
           >
             <MessageCircle size={20} />
             WhatsApp
@@ -157,17 +188,17 @@ export default function ThankYou() {
         }
 
         .mini-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: #f7eee7;
-  color: #8b6f5a;
-  padding: 9px 16px;
-  border-radius: 14px; /* بدل 100px */
-  font-size: 13px;
-  font-weight: 800;
-  margin-bottom: 16px;
-}
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          background: #f7eee7;
+          color: #8b6f5a;
+          padding: 9px 16px;
+          border-radius: 14px;
+          font-size: 13px;
+          font-weight: 800;
+          margin-bottom: 16px;
+        }
 
         .thankyou-card h1 {
           font-size: clamp(30px, 6vw, 48px);
@@ -207,20 +238,20 @@ export default function ThankYou() {
         }
 
         .whatsapp-btn,
-.home-btn,
-.shop-btn {
-  width: 100%;
-  min-height: 56px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  text-decoration: none;
-  font-weight: 900;
-  margin-top: 12px;
-  transition: .3s ease;
-}
+        .home-btn,
+        .shop-btn {
+          width: 100%;
+          min-height: 56px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          text-decoration: none;
+          font-weight: 900;
+          margin-top: 12px;
+          transition: .3s ease;
+        }
 
         .whatsapp-btn {
           background: linear-gradient(135deg, #18b85f, #0f8f4d);
